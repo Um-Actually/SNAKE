@@ -13,7 +13,8 @@ namespace SNAKE
         private List<Rectangle> telo; 
         private List<Vector2> predchoziPozice;
 
-        int v = 5;
+        int vX = 5;
+        int vY = 5;
         public Had(GraphicsDevice graphicsDevice, Rectangle startRect)
         {
             Rect = startRect;
@@ -30,13 +31,27 @@ namespace SNAKE
             int y = Rect.Y;
 
             if (state.IsKeyDown(Keys.A))
-                x -= v;
+            {
+                vX = -5;
+                vY = 0;
+            }
             if (state.IsKeyDown(Keys.D))
-                x += v;
+            {
+                vX = 5;
+                vY = 0;
+            }
             if (state.IsKeyDown(Keys.W))
-                y -= v;
+            {
+                vY = -5;
+                vX = 0;
+            }
             if (state.IsKeyDown(Keys.S))
-                y += v;
+            {
+                vY = 5;
+                vX = 0;
+            }
+            x += vX;
+            y += vY;
             if (x < 0)
                 x = velikostOknaX;
             if (x > velikostOknaX)
@@ -78,11 +93,6 @@ namespace SNAKE
         public void zvetsit(int oKolik)
         {
             Rect = new Rectangle(Rect.X, Rect.Y, Rect.Width + oKolik, Rect.Height + oKolik);
-        }
-        public void zpomalit()
-        {
-            v = (int)(v * 0.9);
-            if (v < 1) v = 1;
         }
 
         public void Draw(SpriteBatch spriteBatch, Color color)
