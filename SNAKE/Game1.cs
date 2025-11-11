@@ -54,6 +54,11 @@ namespace SNAKE
                 if (hrac.Koliduje(jablka[i]))   
                 {
                     jablka.RemoveAt(i);
+                    
+                    int x = random.Next(0, _graphics.PreferredBackBufferWidth - 20);
+                    int y = random.Next(0, _graphics.PreferredBackBufferHeight - 20);
+                    jablka.Add(new Had(GraphicsDevice, new Rectangle(x, y, 20, 20)));
+                   
                     hrac.PridatSegment();
                 }
             }
