@@ -3,116 +3,142 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 
-
 namespace SNAKE
 {
     internal class Had
     {
         private Texture2D texture;
         public Rectangle Rect { get; private set; }
-        private List<Rectangle> telo; 
-        private List<Vector2> predchoziPozice;
+        private List<Rectangle> telo;
+        private int segmentSize = 20;
 
-        int vX = 5;
-        int vY = 5;
+        private int smerX = 1;
+        private int smerY = 0;
+        private float pohybTimer = 0f;
+        private float pohybInterval = 0.1f; 
+
+        public bool JeZivy { get; private set; } = true;
+
         public Had(GraphicsDevice graphicsDevice, Rectangle startRect)
         {
             Rect = startRect;
+            segmentSize = startRect.Width;
             texture = new Texture2D(graphicsDevice, 1, 1);
             texture.SetData(new[] { Color.White });
             telo = new List<Rectangle>();
-            predchoziPozice = new List<Vector2>();
         }
-        public void Pohnout(KeyboardState state,int velikostOknaX,int VelikostOknaY)
+
+        public void Pohnout(KeyboardState state, KeyboardState predchoziState, int velikostOknaX, int velikostOknaY, float deltaTime)
         {
-            predchoziPozice.Insert(0, new Vector2(Rect.X, Rect.Y));
+       
+            if (state.IsKeyDown(Keys.A) && !predchoziState.IsKeyDown(Keys.A) && smerX == 0)
+            {
+                smerX = -1;
+                smerY = 0;
+            }
+            if (state.IsKeyDown(Keys.D) && !predchoziState.IsKeyDown(Keys.D) && smerX == 0)
+            {
+                smerX = 1;
+                smerY = 0;
+            }
+            if (state.IsKeyDown(Keys.W) && !predchoziState.IsKeyDown(Keys.W) && smerY == 0)
+            {
+                smerY = -1;
+                smerX = 0;
+            }
+            if (state.IsKeyDown(Keys.S) && !predchoziState.IsKeyDown(Keys.S) && smerY == 0)
+            {
+                smerY = 1;
+                smerX = 0;
+            }
 
-            int x = Rect.X;
-            int y = Rect.Y;
+     
+            pohybTimer += deltaTime;
+            if (pohybTimer < pohybInterval)
+                return;
 
-            if (state.IsKeyDown(Keys.A))
+            pohybTimer = 0f;
+
+            if (telo.Count > 0)
             {
-                vX = -5;
-                vY = 0;
+
+                for (int i = telo.Count - 1; i > 0; i--)
+                {
+                    telo[i] = telo[i - 1];
+                }
+       
+                telo[0] = Rect;
             }
-            if (state.IsKeyDown(Keys.D))
-            {
-                vX = 5;
-                vY = 0;
-            }
-            if (state.IsKeyDown(Keys.W))
-            {
-                vY = -5;
-                vX = 0;
-            }
-            if (state.IsKeyDown(Keys.S))
-            {
-                vY = 5;
-                vX = 0;
-            }
-            x += vX;
-            y += vY;
+
+       
+            int x = Rect.X + (smerX * segmentSize);
+            int y = Rect.Y + (smerY * segmentSize);
+
+          
             if (x < 0)
-                x = velikostOknaX;
-            if (x > velikostOknaX)
+                x = velikostOknaX - segmentSize;
+            if (x >= velikostOknaX)
                 x = 0;
             if (y < 0)
-                y = VelikostOknaY;
-            if (y > VelikostOknaY)
+                y = velikostOknaY - segmentSize;
+            if (y >= velikostOknaY)
                 y = 0;
-
 
             Rect = new Rectangle(x, y, Rect.Width, Rect.Height);
 
-            for (int i = 0; i < telo.Count; i++)
+        
+            foreach (var segment in telo)
             {
-                if (i < predchoziPozice.Count)
+                if (Rect.Intersects(segment))
                 {
-                    telo[i] = new Rectangle(
-                        (int)predchoziPozice[i].X,
-                        (int)predchoziPozice[i].Y,
-                        telo[i].Width,
-                        telo[i].Height
-                    );
+                    JeZivy = false;
+                    break;
                 }
-            }
-
-
-            if (predchoziPozice.Count > telo.Count + 50)
-            {
-                predchoziPozice.RemoveAt(predchoziPozice.Count - 1);
             }
         }
 
         public void PridatSegment()
         {
-
-            Rectangle novySegment = new Rectangle(Rect.X, Rect.Y, Rect.Width, Rect.Height);
+      
+            Rectangle novySegment;
+            if (telo.Count > 0)
+            {
+                novySegment = telo[telo.Count - 1];
+            }
+            else
+            {
+                novySegment = Rect;
+            }
             telo.Add(novySegment);
-        }
-        public void zvetsit(int oKolik)
-        {
-            Rect = new Rectangle(Rect.X, Rect.Y, Rect.Width + oKolik, Rect.Height + oKolik);
         }
 
         public void Draw(SpriteBatch spriteBatch, Color color)
         {
+ 
             Color teloBarva = new Color(
                 (int)(color.R * 0.6f),
                 (int)(color.G * 0.6f),
                 (int)(color.B * 0.6f)
             );
 
+     
             foreach (var segment in telo)
             {
                 spriteBatch.Draw(texture, segment, teloBarva);
             }
 
+
             spriteBatch.Draw(texture, Rect, color);
         }
-        public bool Koliduje(Had jiny)
+
+        public bool Koliduje(Rectangle jinyRect)
         {
-            return Rect.Intersects(jiny.Rect);
+            return Rect.Intersects(jinyRect);
+        }
+
+        public int GetDelka()
+        {
+            return telo.Count + 1; 
         }
     }
 }

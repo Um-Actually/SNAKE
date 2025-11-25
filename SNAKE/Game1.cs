@@ -11,8 +11,15 @@ namespace SNAKE
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Had hrac;
-        private List<Had> jablka;
+        private List<Rectangle> jablka;
         private Random random;
+        private Texture2D pixelTexture;
+        private SpriteFont font;
+        private KeyboardState predchoziKeyboard;
+
+        private int skore = 0;
+        private bool gameOver = false;
+        private int segmentSize = 20;
 
         public Game1()
         {
@@ -20,60 +27,150 @@ namespace SNAKE
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             random = new Random();
+
+
+            _graphics.PreferredBackBufferWidth = 800;
+            _graphics.PreferredBackBufferHeight = 600;
         }
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            hrac = new Had(GraphicsDevice, new Rectangle(100, 100, 50, 50));
-            jablka = new List<Had>();
-            for (int i = 0; i < 10; i++)
+
+        
+            pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+            pixelTexture.SetData(new[] { Color.White });
+
+        
+            try
             {
-                int x = random.Next(0, _graphics.PreferredBackBufferWidth - 20);
-                int y = random.Next(0, _graphics.PreferredBackBufferHeight - 20);
-                jablka.Add(new Had(GraphicsDevice, new Rectangle(x, y, 20, 20)));
+                font = Content.Load<SpriteFont>("Font");
             }
+            catch
+            {
+                font = null; 
+            }
+
+       
+            int startX = (_graphics.PreferredBackBufferWidth / 2 / segmentSize) * segmentSize;
+            int startY = (_graphics.PreferredBackBufferHeight / 2 / segmentSize) * segmentSize;
+            hrac = new Had(GraphicsDevice, new Rectangle(startX, startY, segmentSize, segmentSize));
+
+       
+            jablka = new List<Rectangle>();
+            for (int i = 0; i < 5; i++)
+            {
+                PridatJablko();
+            }
+        }
+
+        private void PridatJablko()
+        {
+            int maxX = _graphics.PreferredBackBufferWidth / segmentSize;
+            int maxY = _graphics.PreferredBackBufferHeight / segmentSize;
+
+            int x = random.Next(0, maxX) * segmentSize;
+            int y = random.Next(0, maxY) * segmentSize;
+
+            jablka.Add(new Rectangle(x, y, segmentSize, segmentSize));
+        }
+
+        private void RestartHry()
+        {
+            int startX = (_graphics.PreferredBackBufferWidth / 2 / segmentSize) * segmentSize;
+            int startY = (_graphics.PreferredBackBufferHeight / 2 / segmentSize) * segmentSize;
+            hrac = new Had(GraphicsDevice, new Rectangle(startX, startY, segmentSize, segmentSize));
+
+            jablka.Clear();
+            for (int i = 0; i < 5; i++)
+            {
+                PridatJablko();
+            }
+
+            skore = 0;
+            gameOver = false;
         }
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            KeyboardState state = Keyboard.GetState();
+
+            if (state.IsKeyDown(Keys.Escape))
                 Exit();
 
-            KeyboardState state = Keyboard.GetState();
-            hrac.Pohnout(state, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
+            if (gameOver)
+            {
+                if (state.IsKeyDown(Keys.Space) && !predchoziKeyboard.IsKeyDown(Keys.Space))
+                {
+                    RestartHry();
+                }
+                predchoziKeyboard = state;
+                return;
+            }
+
+
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            hrac.Pohnout(state, predchoziKeyboard, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight, deltaTime);
+
+            if (!hrac.JeZivy)
+            {
+                gameOver = true;
+            }
+
+ 
             for (int i = jablka.Count - 1; i >= 0; i--)
             {
-                if (hrac.Koliduje(jablka[i]))   
+                if (hrac.Koliduje(jablka[i]))
                 {
                     jablka.RemoveAt(i);
-                    
-                    int x = random.Next(0, _graphics.PreferredBackBufferWidth - 20);
-                    int y = random.Next(0, _graphics.PreferredBackBufferHeight - 20);
-                    jablka.Add(new Had(GraphicsDevice, new Rectangle(x, y, 20, 20)));
-                   
+                    PridatJablko();
                     hrac.PridatSegment();
+                    skore += 10;
                 }
             }
+
+            predchoziKeyboard = state;
+            base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
             _spriteBatch.Begin();
+
+   
             foreach (var jablko in jablka)
             {
-                jablko.Draw(_spriteBatch, Color.Green);
+                _spriteBatch.Draw(pixelTexture, jablko, Color.Red);
             }
-            hrac.Draw(_spriteBatch, Color.Red);
+
+            hrac.Draw(_spriteBatch, Color.LimeGreen);
+
+            if (font != null)
+            {
+                _spriteBatch.DrawString(font, $"Skore: {skore}  Delka: {hrac.GetDelka()}", new Vector2(10, 10), Color.White);
+
+                if (gameOver)
+                {
+                    string gameOverText = "GAME OVER!";
+                    string restartText = "Stiskni SPACE pro restart";
+                    Vector2 gameOverSize = font.MeasureString(gameOverText);
+                    Vector2 restartSize = font.MeasureString(restartText);
+
+                    _spriteBatch.DrawString(font, gameOverText,
+                        new Vector2(_graphics.PreferredBackBufferWidth / 2 - gameOverSize.X / 2,
+                                    _graphics.PreferredBackBufferHeight / 2 - 30), Color.Red);
+                    _spriteBatch.DrawString(font, restartText,
+                        new Vector2(_graphics.PreferredBackBufferWidth / 2 - restartSize.X / 2,
+                                    _graphics.PreferredBackBufferHeight / 2 + 10), Color.White);
+                }
+            }
 
             _spriteBatch.End();
 
