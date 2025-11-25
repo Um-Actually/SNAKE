@@ -115,7 +115,7 @@ namespace SNAKE
 
 
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            hrac.Pohnout(state, predchoziKeyboard, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight, deltaTime);
+            hrac.Pohnout(state, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight, deltaTime);
 
             if (!hrac.JeZivy)
             {
