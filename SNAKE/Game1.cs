@@ -72,7 +72,7 @@ namespace SNAKE
         private void PridatPrekazky()
         {
   
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 50; i++)
             {
                 int maxX = _graphics.PreferredBackBufferWidth / segmentSize;
                 int maxY = _graphics.PreferredBackBufferHeight / segmentSize;
