@@ -13,14 +13,14 @@ namespace SNAKE
 
         private int segmentSize = 20;
 
-        // směr
-        private int smerX = 1;  // start doprava
+        
+        private int smerX = 1;  
         private int smerY = 0;
 
-        // keyboard
+     
         private KeyboardState lastState;
 
-        // čas pohybu
+      
         private float pohybTimer = 0f;
         private float pohybInterval = 0.12f;
 
@@ -39,23 +39,23 @@ namespace SNAKE
 
         public void Pohnout(KeyboardState state, int velikostOknaX, int velikostOknaY, float deltaTime)
         {
-            // --- OTOČENÍ POUZE PŘI STISKU A ---
+    
             if (state.IsKeyDown(Keys.A) && !lastState.IsKeyDown(Keys.A))
             {
-                // rotace doleva
-                if (smerX == 1 && smerY == 0)       // doprava → nahoru
+               
+                if (smerX == 1 && smerY == 0)       
                 {
                     smerX = 0; smerY = -1;
                 }
-                else if (smerX == 0 && smerY == -1) // nahoru → doleva
+                else if (smerX == 0 && smerY == -1) 
                 {
                     smerX = -1; smerY = 0;
                 }
-                else if (smerX == -1 && smerY == 0) // doleva → dolů
+                else if (smerX == -1 && smerY == 0) 
                 {
                     smerX = 0; smerY = 1;
                 }
-                else if (smerX == 0 && smerY == 1)  // dolů → doprava
+                else if (smerX == 0 && smerY == 1)  
                 {
                     smerX = 1; smerY = 0;
                 }
@@ -63,14 +63,14 @@ namespace SNAKE
 
             lastState = state;
 
-            // --- TIMER POHYBU ---
+ 
             pohybTimer += deltaTime;
             if (pohybTimer < pohybInterval)
                 return;
 
             pohybTimer = 0f;
 
-            // --- POHYB TĚLA ---
+
             Rectangle predchozi = Rect;
 
             if (telo.Count > 0)
@@ -81,19 +81,20 @@ namespace SNAKE
                 telo[0] = predchozi;
             }
 
-            // --- POHYB HLAVY ---
+
             int x = Rect.X + smerX * segmentSize;
             int y = Rect.Y + smerY * segmentSize;
 
-            // warp hran okna
-            if (x < 0) x = velikostOknaX - segmentSize;
-            if (x >= velikostOknaX) x = 0;
-            if (y < 0) y = velikostOknaY - segmentSize;
-            if (y >= velikostOknaY) y = 0;
+
+            if (x < 0 || x >= velikostOknaX || y < 0 || y >= velikostOknaY)
+            {
+                JeZivy = false;
+                return;
+            }
 
             Rect = new Rectangle(x, y, segmentSize, segmentSize);
 
-            // --- KOLIZE SE SEBOU ---
+
             foreach (var s in telo)
             {
                 if (Rect.Intersects(s))
